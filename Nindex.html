@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ben Simani – Portfolio</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            padding-top: 56px;
+            /* offset for fixed navbar */
+        }
+
+        header {
+            background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+        }
+
+        header .profile-img {
+            width: 140px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        section {
+            scroll-margin-top: 70px;
+            /* ensures anchor sections aren\'t hidden under navbar */
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#home">Ben Simani</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navBar"
+                aria-controls="navBar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navBar">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#skills">Skills</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header id="home" class="text-center text-white py-5">
+        <div class="container">
+            <img src="https://source.unsplash.com/collection/888146/200x200" alt="profile" class="profile-img mb-3" />
+            <h1 class="display-4 fw-bold">Hi, I\'m Ben Simani</h1>
+            <p class="lead mb-4">
+                Full‑Stack Developer & Computer Science Student (BSc 92/100)
+            </p>
+            <a href="#contact" class="btn btn-outline-light btn-lg">Let\'s connect</a>
+        </div>
+    </header>
+
+    <!-- About -->
+    <section id="about" class="container py-5">
+        <h2 class="text-center mb-4">About Me</h2>
+        <p class="fs-5">
+            I\'m a third‑year Computer Science student at Holon Institute of Technology,
+            maintaining a 92 GPA while working on professional projects in web and mobile
+            development. Passionate about creating scalable, user‑friendly applications,
+            I\'ve built everything from VR tools for autism therapy to full‑stack social
+            platforms leveraging React, Node.js, and Firebase. I currently work at Intel in
+            chip manufacturing logistics and love blending technology with real‑world impact.
+        </p>
+    </section>
+
+    <!-- Skills -->
+    <section id="skills" class="bg-light py-5">
+        <div class="container">
+            <h2 class="text-center mb-4">Technical Skills</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Frontend</h5>
+                            <p class="card-text mb-1">HTML5 / CSS3 / ES6</p>
+                            <p class="card-text mb-1">React / React Native</p>
+                            <p class="card-text">Bootstrap / Tailwind</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Backend</h5>
+                            <p class="card-text mb-1">Node.js / Express</p>
+                            <p class="card-text mb-1">MongoDB / MySQL</p>
+                            <p class="card-text">Firebase / REST APIs</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Tools & Misc</h5>
+                            <p class="card-text mb-1">Git / GitHub</p>
+                            <p class="card-text mb-1">Android (Java/Kotlin)</p>
+                            <p class="card-text">Docker / CI‑CD basics</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects -->
+    <section id="projects" class="container py-5">
+        <h2 class="text-center mb-4">Featured Projects</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <img src="https://source.unsplash.com/featured/?social,network" class="card-img-top"
+                        alt="LinkSpark" />
+                    <div class="card-body">
+                        <h5 class="card-title">LinkSpark</h5>
+                        <p class="card-text">
+                            A full‑stack social media platform with group management, friend lists,
+                            and real‑time updates. Built with React, Node.js, and MongoDB.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <img src="https://source.unsplash.com/featured/?animals,app" class="card-img-top"
+                        alt="Animal Info App" />
+                    <div class="card-body">
+                        <h5 class="card-title">Animal Info App</h5>
+                        <p class="card-text">
+                            Bilingual (Hebrew/English) Android app fetching animal data from external
+                            APIs, with Firebase integration and rich animations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <img src="https://source.unsplash.com/featured/?vr,education" class="card-img-top"
+                        alt="VR Autism Trainer" />
+                    <div class="card-body">
+                        <h5 class="card-title">VR Autism Trainer</h5>
+                        <p class="card-text">
+                            International team project delivering a safe VR environment for autistic
+                            individuals to practice daily routines.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="bg-dark text-white py-5">
+        <div class="container text-center">
+            <h2 class="mb-4">Get in Touch</h2>
+            <p class="mb-4 fs-5">Feel free to reach out for collaboration or just a friendly chat.</p>
+            <a href="mailto:ben@example.com" class="btn btn-outline-light btn-lg me-2">Email Me</a>
+            <a href="https://www.linkedin.com/in/your‑linkedin" class="btn btn-outline-light btn-lg" target="_blank"
+                rel="noopener">LinkedIn</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-secondary text-white text-center py-3">
+        © 2025 Ben Simani. All rights reserved.
+    </footer>
+
+    <!-- Bootstrap Bundle JS (with Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
