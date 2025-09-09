@@ -36,23 +36,7 @@ import IDBWrapper from '../idb';
 // Initialize the database with a specific name and version
 const db = new IDBWrapper('CostManagerDB', 1);
 
-/**
- * @typedef {Object} FormState
- * @property {string} id - The ID of the selected expense
- * @property {string} sum - The amount of the expense
- * @property {string} category - The category of the expense
- * @property {string} description - The description of the expense
- * @property {string} date - The date of the expense
- */
-
-/**
- * @typedef {Object} ExpenseState
- * @property {Array} expenses - List of all expenses
- * @property {number} selectedMonth - Currently selected month (1-12)
- * @property {number} selectedYear - Currently selected year
- */
-
-// Define category colors for different expense categories
+// Category colors
 const categoryColors = {
   Food: '#4CAF50',
   Transportation: '#2196F3',
@@ -62,13 +46,37 @@ const categoryColors = {
   Utilities: '#00BCD4'
 };
 
-/**
- * EditExpenseForm Component
- * Provides interface for selecting and editing existing expenses.
- * @returns {JSX.Element} A form to edit an existing cost entry.
- */
+// Currency symbol helper
+const getSymbol = (c) =>
+  ({ USD: '$', GBP: '£', EURO: '€', ILS: '₪' }[String(c || 'USD').toUpperCase()] || '');
+
+// Safe date helpers
+const parseExpenseDate = (exp, year, month) => {
+  if (exp?._ts) {
+    const d = new Date(exp._ts);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  if (exp?.date) {
+    const d = new Date(exp.date);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  const day = Number(exp?.Date?.day);
+  if (day) {
+    const d = new Date(year, month - 1, day);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return null;
+};
+
+const toInputDate = (d) => {
+  if (!d || Number.isNaN(d.getTime())) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 function EditExpenseForm() {
-  /** @type {[FormState, Function]} Form state and setter */
   const [form, setForm] = useState({
     id: '',
     sum: '',
@@ -77,21 +85,11 @@ function EditExpenseForm() {
     date: ''
   });
 
-  /** @type {[Array, Function]} Expenses list state and setter */
   const [expenses, setExpenses] = useState([]);
-  /** @type {[number, Function]} Selected month state and setter */
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  /** @type {[number, Function]} Selected year state and setter */
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-
-  /** @type {[boolean, Function]} Delete confirmation dialog state and setter */
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-  /**
-   * Fetches all expenses from the database for the selected month and year.
-   * Updates the expenses state with the fetched data.
-   * @async
-   */
   useEffect(() => {
     const fetchExpenses = async () => {
       const allExpenses = await db.getCostsByMonthYear(selectedMonth, selectedYear);
@@ -100,88 +98,60 @@ function EditExpenseForm() {
     fetchExpenses();
   }, [selectedMonth, selectedYear]);
 
-  /**
-   * Handles form field changes.
-   * @param {Object} e - The event object.
-   * @param {string} e.target.name - The name of the form field.
-   * @param {string} e.target.value - The new value of the form field.
-   */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  /**
-   * Submits the updated expense to the database.
-   * Performs several validations before allowing the submission:
-   * 1. Checks if all required fields are filled
-   * 2. Validates that the sum is a valid number
-   * 3. Ensures the sum is greater than 0
-   * 4. Verifies that description is not empty
-   * @async
-   */
   const handleEdit = async () => {
-    // Step 1: Validate that sum required 
     if (!form.id || !form.sum) {
-      alert('Please fill in the sum before adding.');
+      alert('Please select an expense and fill the amount.');
       return;
     }
-
-    // Step 2: Validate that sum is a valid number
-    // Convert the sum to a number and check if it's valid
     const numericSum = parseFloat(form.sum);
     if (isNaN(numericSum)) {
       alert('Amount must contain only numbers');
       return;
     }
-
-    // Step 3: Validate that sum is positive
-    // Ensure the amount is greater than 0
     if (numericSum <= 0) {
       alert('Amount must be greater than 0');
       return;
     }
-
-    // Step 4: Validate description
-    // Check if description exists and is not just whitespace
     if (!form.description.trim()) {
       alert('Description is required');
       return;
     }
+    if (!form.date) {
+      alert('Date is required');
+      return;
+    }
 
-    // All validations passed, proceed with update
-    const updatedExpense = { ...form, date: new Date(form.date) };
+    const updatedExpense = {
+      ...form,
+      sum: numericSum,
+      date: new Date(form.date) // valid because we require YYYY-MM-DD
+    };
+
     await db.updateCost(updatedExpense);
     alert('Expense updated successfully!');
-    
-    // Refresh the expenses list
     const updatedExpenses = await db.getCostsByMonthYear(selectedMonth, selectedYear);
     setExpenses(updatedExpenses);
-    
-    // Reset form after successful update
     setForm({ id: '', sum: '', category: '', description: '', date: '' });
   };
 
-  /**
-   * Handles the selection of an expense to edit.
-   * Updates the form state with the selected expense's details.
-   * @param {Object} event - The event object from the select component.
-   */
   const handleExpenseSelect = (event) => {
     const selectedExpense = expenses.find(expense => expense.id === event.target.value);
     if (selectedExpense) {
+      const d = parseExpenseDate(selectedExpense, selectedYear, selectedMonth);
       setForm({
         id: selectedExpense.id,
-        sum: selectedExpense.sum,
-        category: selectedExpense.category,
-        description: selectedExpense.description,
-        date: new Date(selectedExpense.date).toISOString().split('T')[0]
+        sum: String(selectedExpense.sum ?? ''),
+        category: selectedExpense.category || '',
+        description: selectedExpense.description || '',
+        date: toInputDate(d) // safe for <input type="date">
       });
     }
   };
 
-  /**
-   * Opens the delete confirmation dialog.
-   */
   const handleOpenDeleteDialog = () => {
     if (!form.id) {
       alert('Please select an expense to delete');
@@ -190,43 +160,19 @@ function EditExpenseForm() {
     setOpenDeleteDialog(true);
   };
 
-  /**
-   * Closes the delete confirmation dialog.
-   */
-  const handleCloseDeleteDialog = () => {
-    setOpenDeleteDialog(false);
-  };
+  const handleCloseDeleteDialog = () => setOpenDeleteDialog(false);
 
-  /**
-   * Deletes the selected expense from the database.
-   * Performs several validations before allowing the deletion:
-   * 1. Checks if an expense is selected
-   * 2. Confirms deletion with user through dialog
-   * 3. Handles potential errors during deletion
-   * @async
-   */
   const handleDelete = async () => {
     try {
-      // Validate that an expense is selected
       if (!form.id) {
         alert('Please select an expense to delete');
         return;
       }
-
-      // Delete the expense from the database
       await db.deleteCost(form.id);
-      
-      // Close the confirmation dialog
       setOpenDeleteDialog(false);
-      
-      // Show success message
       alert('Expense deleted successfully!');
-      
-      // Refresh the expenses list
       const updatedExpenses = await db.getCostsByMonthYear(selectedMonth, selectedYear);
       setExpenses(updatedExpenses);
-      
-      // Reset form after successful deletion
       setForm({ id: '', sum: '', category: '', description: '', date: '' });
     } catch (error) {
       console.error('Error deleting expense:', error);
@@ -237,25 +183,23 @@ function EditExpenseForm() {
 
   return (
     <Box sx={{ p: 4 }}>
-      <Typography 
-        variant="h4" 
-        align="center" 
-        sx={{ 
-          color: '#2c3e50',
-          fontWeight: 700,
-          mb: 4
-        }}
+      <Typography
+        variant="h4"
+        align="center"
+        sx={{ color: '#2c3e50', fontWeight: 700, mb: 4 }}
       >
         Edit Expense
       </Typography>
 
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 2, 
-        mb: 4,
-        flexWrap: 'wrap',
-        justifyContent: 'center'
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          mb: 4,
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }}
+      >
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Month</InputLabel>
           <Select
@@ -264,9 +208,7 @@ function EditExpenseForm() {
             label="Month"
             sx={{
               borderRadius: '12px',
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'rgba(0, 0, 0, 0.1)',
-              },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0, 0, 0, 0.1)' }
             }}
           >
             {[...Array(12).keys()].map((month) => (
@@ -283,9 +225,7 @@ function EditExpenseForm() {
             label="Year"
             sx={{
               borderRadius: '12px',
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'rgba(0, 0, 0, 0.1)',
-              },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0, 0, 0, 0.1)' }
             }}
           >
             {[...Array(21).keys()].map((yearOffset) => {
@@ -316,30 +256,45 @@ function EditExpenseForm() {
                 label="Select Expense"
                 sx={{
                   borderRadius: '12px',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                  },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0, 0, 0, 0.1)' }
                 }}
               >
-                {expenses.map((expense) => (
-                  <MenuItem key={expense.id} value={expense.id}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      width: '100%',
-                      gap: 2
-                    }}>
-                      <Typography sx={{ color: categoryColors[expense.category] }}>
-                        {expense.category}
-                      </Typography>
-                      <Typography>₪{expense.sum}</Typography>
-                      <Typography sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
-                        {expense.description}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
+                {expenses.map((expense) => {
+                  const sym = getSymbol(expense.currency);
+                  return (
+                    <MenuItem key={expense.id} value={expense.id}>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto 2fr',
+                          alignItems: 'center',
+                          width: '100%',
+                          gap: 2
+                        }}
+                      >
+                        <Typography sx={{ color: categoryColors[expense.category], fontWeight: 500 }}>
+                          {expense.category}
+                        </Typography>
+                        <Typography sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {`${sym}${Number(expense.sum || 0).toLocaleString()}`}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            color: 'text.secondary',
+                            fontSize: '0.9rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            justifySelf: 'end'
+                          }}
+                          title={expense.description}
+                        >
+                          {expense.description}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
 
@@ -358,14 +313,12 @@ function EditExpenseForm() {
                       <InputAdornment position="start">
                         <AttachMoneyIcon sx={{ color: '#6b7280' }} />
                       </InputAdornment>
-                    ),
+                    )
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '12px',
-                      '&:hover fieldset': {
-                        borderColor: '#3b82f6',
-                      },
+                      '&:hover fieldset': { borderColor: '#3b82f6' }
                     },
                     mb: 2
                   }}
@@ -385,14 +338,12 @@ function EditExpenseForm() {
                       <InputAdornment position="start">
                         <CategoryIcon sx={{ color: '#6b7280' }} />
                       </InputAdornment>
-                    ),
+                    )
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '12px',
-                      '&:hover fieldset': {
-                        borderColor: '#3b82f6',
-                      },
+                      '&:hover fieldset': { borderColor: '#3b82f6' }
                     },
                     mb: 2
                   }}
@@ -418,14 +369,12 @@ function EditExpenseForm() {
                       <InputAdornment position="start">
                         <DescriptionIcon sx={{ color: '#6b7280' }} />
                       </InputAdornment>
-                    ),
+                    )
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '12px',
-                      '&:hover fieldset': {
-                        borderColor: '#3b82f6',
-                      },
+                      '&:hover fieldset': { borderColor: '#3b82f6' }
                     },
                     mb: 2
                   }}
@@ -445,26 +394,22 @@ function EditExpenseForm() {
                       <InputAdornment position="start">
                         <CalendarTodayIcon sx={{ color: '#6b7280' }} />
                       </InputAdornment>
-                    ),
+                    )
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '12px',
-                      '&:hover fieldset': {
-                        borderColor: '#3b82f6',
-                      },
+                      '&:hover fieldset': { borderColor: '#3b82f6' }
                     },
                     mb: 3
                   }}
-                  InputLabelProps={{
-                    shrink: true, 
-                  }}
+                  InputLabelProps={{ shrink: true }}
                 />
 
                 <Box display="flex" justifyContent="center" gap={2}>
-                  <Button 
-                    variant="contained" 
-                    size="large" 
+                  <Button
+                    variant="contained"
+                    size="large"
                     onClick={handleEdit}
                     startIcon={<EditIcon />}
                     sx={{
@@ -477,7 +422,7 @@ function EditExpenseForm() {
                       '&:hover': {
                         background: 'linear-gradient(45deg, #2563eb 30%, #3b82f6 90%)',
                         transform: 'translateY(-1px)',
-                        boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)',
+                        boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)'
                       },
                       transition: 'all 0.3s ease'
                     }}
@@ -485,9 +430,9 @@ function EditExpenseForm() {
                     Save Changes
                   </Button>
 
-                  <Button 
-                    variant="contained" 
-                    size="large" 
+                  <Button
+                    variant="contained"
+                    size="large"
                     onClick={handleOpenDeleteDialog}
                     startIcon={<DeleteIcon />}
                     sx={{
@@ -500,7 +445,7 @@ function EditExpenseForm() {
                       '&:hover': {
                         background: 'linear-gradient(45deg, #dc2626 30%, #ef4444 90%)',
                         transform: 'translateY(-1px)',
-                        boxShadow: '0 6px 20px rgba(239, 68, 68, 0.4)',
+                        boxShadow: '0 6px 20px rgba(239, 68, 68, 0.4)'
                       },
                       transition: 'all 0.3s ease'
                     }}
@@ -521,28 +466,23 @@ function EditExpenseForm() {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          {"Confirm Expense Deletion"}
-        </DialogTitle>
+        <DialogTitle id="alert-dialog-title">{"Confirm Expense Deletion"}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             Are you sure you want to delete this expense? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={handleCloseDeleteDialog}
-            sx={{ color: '#6b7280' }}
-          >
+          <Button onClick={handleCloseDeleteDialog} sx={{ color: '#6b7280' }}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleDelete}
             variant="contained"
             sx={{
               background: 'linear-gradient(45deg, #ef4444 30%, #f87171 90%)',
               '&:hover': {
-                background: 'linear-gradient(45deg, #dc2626 30%, #ef4444 90%)',
+                background: 'linear-gradient(45deg, #dc2626 30%, #ef4444 90%)'
               }
             }}
             autoFocus
@@ -552,7 +492,7 @@ function EditExpenseForm() {
         </DialogActions>
       </Dialog>
     </Box>
-  ); // Returns a form with expense selector and editable fields for sum, category, description, and date to modify existing expenses
+  );
 }
 
 export default EditExpenseForm;
