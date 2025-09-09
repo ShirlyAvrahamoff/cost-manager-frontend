@@ -25,20 +25,15 @@ export async function fetchExchangeRates() {
  * Converts amount from source currency to target currency using the given rates.
  * All rates are relative to USD = 1.
  */
-export function convert(amount, fromCurrency, toCurrency, rates) {
-    if (fromCurrency === toCurrency) return amount;
-
-    const from = norm(fromCurrency);
-    const to = norm(toCurrency);
-
-    if (!rates[from] || !rates[to]) {
-        throw new Error('Missing currency in rates.');
-    }
-
-    // Convert source -> USD -> target
-    const usdAmount = amount / rates[from];
-    return usdAmount * rates[to];
+export function convert(amount, from, to, rates) {
+  if (!amount) return 0;
+  const f = String(from || 'USD').toUpperCase();
+  const t = String(to || 'USD').toUpperCase();
+  // rates = {"USD":1, "ILS":3.4, "GBP":1.8, "EURO":0.7}
+  const inUSD = amount / (rates?.[f] || 1);
+  return Number((inUSD * (rates?.[t] || 1)).toFixed(2));
 }
+
 
 function norm(k) {
     return String(k || '').toUpperCase().trim();
