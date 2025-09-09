@@ -8,7 +8,8 @@ import React, { useState, useEffect } from 'react';
 import IDBWrapper from '../idb';
 import {
   Box, Typography, Select, MenuItem, Card, CardContent,
-  Button, TextField, InputLabel, FormControl, InputAdornment
+  Button, TextField, InputLabel, FormControl, InputAdornment,
+  Switch, FormControlLabel
 } from '@mui/material';
 import Fuse from 'fuse.js';
 import SearchIcon from '@mui/icons-material/Search';
@@ -34,6 +35,9 @@ const MonthlyReport = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [currency, setCurrency] = useState('USD');
+
+  // Show original amounts toggle
+  const [showOriginal, setShowOriginal] = useState(false);
 
   // Data
   const [reportData, setReportData] = useState([]);
@@ -78,7 +82,7 @@ const MonthlyReport = () => {
     const fetchReportData = async () => {
       const idb = new IDBWrapper('CostManagerDB', 1);
 
-      // NOTE: wrapper here expects (month, year). Keep as-is for this project.
+      // wrapper expects (month, year)
       const costs = await idb.getCostsByMonthYear(selectedMonth, selectedYear);
       setReportData(costs);
 
@@ -125,39 +129,40 @@ const MonthlyReport = () => {
     setFilteredData(filtered);
   }, [reportData, searchTerm]);
 
+  const sym = currencySymbol(currency);
+
+  const convertedValue = (cost) => {
+    if (!rates) return null;
+    const from = String(cost.currency || 'USD').toUpperCase();
+    return convert(Number(cost.sum) || 0, from, currency, rates);
+  };
+
   /**
-   * Export current data to CSV (includes approx per row in selected currency,
-   * total in selected currency, and per-category totals in selected currency).
+   * Export current data to CSV (always in selected currency).
+   * If "showOriginal" is on, include an extra "Original Amount" column.
    */
   const exportToCSV = () => {
-    const sym = currencySymbol(currency);
-
-    const csvRows = [
-      ['Category', 'Sum', 'Currency', 'Description', 'Date', `Approx in ${currency}`],
+    const rows = [
+      ['Category', `Amount (${currency})`, ...(showOriginal ? ['Original Amount'] : []), 'Description', 'Date'],
       ...reportData.map(cost => {
-        const approx = rates
-          ? convert(Number(cost.sum) || 0, String(cost.currency || 'USD').toUpperCase(), currency, rates)
-          : '';
         const d = normalizeCostDate(cost);
-        const dateStr = d
-          ? d.toLocaleDateString()
-          : (cost?.Date?.day
-              ? `${String(selectedMonth).padStart(2, '0')}/${String(cost.Date.day).padStart(2, '0')}/${selectedYear}`
-              : '');
+        const val = convertedValue(cost);
+        const origAmount = Number(cost.sum) || 0;
+        const origCurr = String(cost.currency || 'USD').toUpperCase();
+        const origSym = currencySymbol(origCurr);
 
         return [
           cost.category,
-          (Number(cost.sum) || 0).toFixed(2),
-          String(cost.currency || 'USD').toUpperCase(),
+          val === null ? '' : `${sym}${val.toFixed(2)}`,
+          ...(showOriginal ? [`${origSym}${origAmount.toFixed(2)} ${origCurr}`] : []),
           cost.description,
-          dateStr,
-          approx === '' ? '' : `${sym}${approx.toFixed(2)}`
+          d ? d.toLocaleDateString() : (cost?.Date?.day ? `Day ${cost.Date.day}` : '')
         ];
       }),
       [],
       ['Summary'],
       ['Total Expenses', reportData.length],
-      [`Total in ${currency}`, `${sym}${totalConverted.toFixed(2)}`],
+      [`Total (${currency})`, `${sym}${totalConverted.toFixed(2)}`],
       [],
       [`Totals by category in ${currency}`],
       ...Object.entries(totalsByCategoryConverted).map(([cat, sum]) => [
@@ -165,7 +170,7 @@ const MonthlyReport = () => {
       ])
     ];
 
-    const csvContent = csvRows.map(e => e.join(',')).join('\n');
+    const csvContent = rows.map(e => e.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -176,8 +181,6 @@ const MonthlyReport = () => {
     link.click();
     document.body.removeChild(link);
   };
-
-  const sym = currencySymbol(currency);
 
   return (
     <Box sx={{ p: 4 }}>
@@ -248,6 +251,16 @@ const MonthlyReport = () => {
             {currencies.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
           </Select>
         </FormControl>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showOriginal}
+              onChange={(e) => setShowOriginal(e.target.checked)}
+            />
+          }
+          label="Show original amounts"
+        />
       </Box>
 
       {/* Search */}
@@ -278,11 +291,11 @@ const MonthlyReport = () => {
           {/* Expense cards */}
           <Box sx={{ display: 'grid', gap: 2, mb: 4 }}>
             {filteredData.map((cost, idx) => {
-              const originalCurrency = String(cost.currency || 'USD').toUpperCase();
-              const approx = rates
-                ? convert(Number(cost.sum) || 0, originalCurrency, currency, rates)
-                : null;
               const d = normalizeCostDate(cost);
+              const val = convertedValue(cost); // in selected currency
+              const origAmount = Number(cost.sum) || 0;
+              const origCurr = String(cost.currency || 'USD').toUpperCase();
+              const origSym = ({ USD: '$', GBP: '£', EURO: '€', ILS: '₪' }[origCurr] || '');
 
               return (
                 <Card
@@ -299,15 +312,19 @@ const MonthlyReport = () => {
                       <Typography variant="h6" sx={{ color: categoryColors[cost.category] }}>
                         {cost.category}
                       </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {`${Number(cost.sum).toFixed(2)} ${originalCurrency}`}{" "}
-                        {approx !== null && (
-                          <Typography component="span" variant="body2" color="text.secondary">
-                            {`(≈ ${sym}${approx.toFixed(2)} ${currency})`}
+
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {val === null ? '...' : `${sym}${val.toFixed(2)} ${currency}`}
+                        </Typography>
+                        {showOriginal && (
+                          <Typography variant="body2" color="text.secondary">
+                            {`${origSym}${origAmount.toFixed(2)} ${origCurr}`}
                           </Typography>
                         )}
-                      </Typography>
+                      </Box>
                     </Box>
+
                     <Typography color="text.secondary">{cost.description}</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                       {d ? d.toLocaleDateString() : (cost?.Date?.day ? `Day ${cost.Date.day}` : '-')}

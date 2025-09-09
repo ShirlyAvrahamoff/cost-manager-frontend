@@ -4,7 +4,7 @@
  * Provides a form with fields for sum, currency, category, and description.
  * The date is attached automatically on insert by the idb layer.
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Button,
   TextField,
@@ -18,28 +18,13 @@ import {
   InputLabel,
   Select
 } from '@mui/material';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CategoryIcon from '@mui/icons-material/Category';
 import DescriptionIcon from '@mui/icons-material/Description';
 import IDBWrapper from '../idb'; // assumes default export is a class-like wrapper
 
 const db = new IDBWrapper('CostManagerDB', 1);
 
-/**
- * @typedef {Object} FormState
- * @property {string} sum - The amount of the expense
- * @property {string} currency - The currency of the expense (USD/ILS/GBP/EURO)
- * @property {string} category - The category of the expense
- * @property {string} description - The description of the expense
- */
-
-/**
- * AddCostForm Component
- * Provides interface for adding new expenses to the database.
- * @returns {JSX.Element} A form to add new costs.
- */
 function AddCostForm() {
-  /** @type {[FormState, Function]} Form state and setter */
   const [form, setForm] = useState({
     sum: '',
     currency: 'USD',
@@ -47,22 +32,16 @@ function AddCostForm() {
     description: ''
   });
 
-  /**
-   * Handles input field changes.
-   * @param {Object} e - The event object.
-   * @param {string} e.target.name - The name of the form field.
-   * @param {string} e.target.value - The new value of the form field.
-   */
+  // currency symbol per selection
+  const currencySymbol = useMemo(() => {
+    const map = { USD: '$', ILS: '₪', GBP: '£', EURO: '€' };
+    return map[String(form.currency).toUpperCase()] ?? '';
+  }, [form.currency]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  /**
-   * Submits the form and adds a new cost entry to the database.
-   * Validates required fields before submission.
-   * The idb layer is responsible for attaching the add-date automatically.
-   * @async
-   */
   const handleSubmit = async () => {
     if (!form.sum) {
       alert('Please fill in the sum before adding.');
@@ -89,7 +68,6 @@ function AddCostForm() {
       return;
     }
 
-    // Do not pass a date; it must be attached automatically inside idb.addCost
     await db.addCost({
       sum: Number(form.sum),
       currency: String(form.currency).toUpperCase(),
@@ -133,7 +111,9 @@ function AddCostForm() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <AttachMoneyIcon sx={{ color: '#6b7280' }} />
+                    <span style={{ color: '#6b7280', fontWeight: 600 }}>
+                      {currencySymbol}
+                    </span>
                   </InputAdornment>
                 )
               }}
