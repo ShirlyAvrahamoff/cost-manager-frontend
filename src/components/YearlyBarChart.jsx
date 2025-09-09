@@ -18,6 +18,9 @@ export default function YearlyBarChart() {
   const [ratesError, setRatesError] = useState('');
   const [dataError, setDataError] = useState('');
   const navigate = useNavigate();
+  const symbolMap = { USD: '$', GBP: '£', EURO: '€', ILS: '₪' };
+  const symbol = symbolMap[currency] || '';
+  const fmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 
   const years = useMemo(() => {
     const y = new Date().getFullYear();
@@ -66,7 +69,7 @@ export default function YearlyBarChart() {
   }
 
   const maxValue = useMemo(
-    () => Math.max(1, ...monthlyTotals.map(v => Math.round(v))),
+    () => Math.max(1, ...monthlyTotals) * 1.12,
     [monthlyTotals]
   );
 
@@ -166,7 +169,7 @@ export default function YearlyBarChart() {
                       fontSize="14"
                       fill="#333"
                     >
-                      {val.toFixed(0)}
+                      {fmt.format(Math.round(val))}
                     </text>
                   </g>
                 );
