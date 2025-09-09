@@ -135,10 +135,10 @@ function AddCostForm() {
                 value={form.currency}
                 onChange={handleChange}
               >
-                <MenuItem value="USD">USD</MenuItem>
-                <MenuItem value="ILS">ILS</MenuItem>
-                <MenuItem value="GBP">GBP</MenuItem>
-                <MenuItem value="EURO">EURO</MenuItem>
+              <MenuItem value="USD">USD ($)</MenuItem>
+              <MenuItem value="ILS">ILS (₪)</MenuItem>
+              <MenuItem value="GBP">GBP (£)</MenuItem>
+              <MenuItem value="EURO">EURO (€)</MenuItem>
               </Select>
             </FormControl>
 
