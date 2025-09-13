@@ -1,33 +1,52 @@
 // src/services/currencyService.js
 import { getExchangeRatesUrl } from './settings';
 
+const DEFAULT_RATES_URL =
+  '/rates.json';
+
+const EXTERNAL_RATES_URL =
+  'https://gist.githubusercontent.com/ShirlyAvrahamoff/31522888d5fb081ad27734650d888959/raw/e9960bb7be1ca27bcc8982893346ce306da0cd9f/rates.json';
+
 /**
  * Fetch exchange rates JSON from the configured URL.
  * Expected shape: { USD: 1, GBP: 1.8, EURO: 0.7, ILS: 3.4 }
  * The values are “units per 1 USD”.
- * Falls back to /rates.json for local development if no URL is configured.
+ * Falls back to /rates.json, then to the external gist, ואז לערכי ברירת מחדל.
  */
 export async function fetchExchangeRates() {
   let url = getExchangeRatesUrl();
-  if (!url) url = '/rates.json';
-
-  const res = await fetch(url, { method: 'GET' });
-  if (!res.ok) {
-    // Try local fallback once if the remote URL fails
-    if (url !== '/rates.json') {
-      const fb = await fetch('/rates.json');
-      if (fb.ok) {
-        const data2 = await fb.json();
-        validateRatesShape(data2);
-        return data2;
-      }
-    }
-    throw new Error(`Failed to fetch rates. HTTP ${res.status}`);
+  // נקה מרכאות שנשמרו בטעות
+  if (typeof url === 'string') {
+    url = url.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1').trim();
   }
+  if (!url) url = DEFAULT_RATES_URL;
 
-  const data = await res.json();
-  validateRatesShape(data);
-  return data;
+  // Helper קטן
+  const tryFetch = async (u) => {
+    const res = await fetch(u, { method: 'GET', cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    validateRatesShape(data);
+    return data;
+  };
+
+  // נסה: URL נוכחי → לוקאלי → gist → דיפולט קשיח
+  try {
+    return await tryFetch(url);
+  } catch (e1) {
+    // לוקאלי
+    if (url !== DEFAULT_RATES_URL) {
+      try {
+        return await tryFetch(DEFAULT_RATES_URL);
+      } catch {}
+    }
+    // gist חיצוני
+    try {
+      return await tryFetch(EXTERNAL_RATES_URL);
+    } catch {}
+    // דיפולט קשיח
+    return { USD: 1, GBP: 1.8, EURO: 0.7, ILS: 3.4 };
+  }
 }
 
 /**
