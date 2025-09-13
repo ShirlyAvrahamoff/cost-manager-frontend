@@ -1,5 +1,5 @@
 // src/idb.js
-// React modules version (אפשר להרחיב מעבר ל-3 הפונקציות לפי ה-Q&A).
+// React modules version
 export default class IDBWrapper {
   constructor(dbName = 'CostManagerDB', version = 2) {
     this.dbName = dbName;
@@ -28,7 +28,6 @@ export default class IDBWrapper {
             store.createIndex('ym', ['year', 'month'], { unique: false });
           }
 
-          // מיגרציה: השלם year/month/day/Date.day לרשומות ישנות
           const curReq = store.openCursor();
           curReq.onsuccess = (ev) => {
             const cur = ev.target.result;
@@ -48,10 +47,9 @@ export default class IDBWrapper {
         req.onsuccess = (e) => resolve(e.target.result);
         req.onerror = (e) => {
           const err = e.target.error;
-          // אם ניסינו לפתוח עם גרסה קטנה מהקיימת – פותחים בלי מספר גרסה (הגרסה הקיימת)
           if ((err && err.name === 'VersionError') ||
               String(err || '').includes('The requested version')) {
-            const r2 = indexedDB.open(this.dbName); // open existing version
+            const r2 = indexedDB.open(this.dbName); 
             r2.onsuccess = (ev) => resolve(ev.target.result);
             r2.onerror = (ev) => reject(ev.target.error);
           } else {
@@ -113,7 +111,7 @@ export default class IDBWrapper {
       currency: String(cost.currency).toUpperCase(),
       category: String(cost.category),
       description: String(cost.description),
-      Date: { day: now.getDate() }, // per spec
+      Date: { day: now.getDate() }, 
       _ts: now.toISOString(),
       year: now.getFullYear(),
       month: now.getMonth() + 1,
@@ -177,7 +175,7 @@ export default class IDBWrapper {
 
   async getCostsByMonthYear(year, month) {
     let y = Number(year), m = Number(month);
-    if (y >= 1 && y <= 12 && m > 31) [y, m] = [m, y]; // tolerate (month, year)
+    if (y >= 1 && y <= 12 && m > 31) [y, m] = [m, y]; 
     const db = await this.dbPromise;
 
     return new Promise((resolve, reject) => {
@@ -188,7 +186,6 @@ export default class IDBWrapper {
       try { idx = store.index('ym'); } catch (_e) { idx = null; }
 
       if (!idx) {
-        // legacy fallback
         const out = [];
         store.openCursor().onsuccess = (e) => {
           const c = e.target.result;
