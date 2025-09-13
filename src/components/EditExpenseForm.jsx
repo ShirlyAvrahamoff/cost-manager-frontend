@@ -48,7 +48,7 @@ const toInputDate = (d) => {
 };
 
 export default function EditExpenseForm() {
-  const [form, setForm] = useState({ id: '', sum: '', category: '', description: '', date: '' });
+  const [form, setForm] = useState({ id: '', sum: '', category: '', currency: '', description: '', date: '' });
   const [expenses, setExpenses] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -62,7 +62,7 @@ export default function EditExpenseForm() {
       const allExpenses = await db.getCostsByMonthYear(selectedYear, selectedMonth);
       if (cancelled) return;
       setExpenses(allExpenses);
-      setForm({ id: '', sum: '', category: '', description: '', date: '' });
+      setForm({ id: '', sum: '', category: '', currency: '', description: '', date: '' });
       setOpenDeleteDialog(false);
     })();
     return () => { cancelled = true; };
@@ -70,9 +70,9 @@ export default function EditExpenseForm() {
 
   useEffect(() => {
     if (form.id && !expenses.some(e => e.id === form.id)) {
-      setForm({ id: '', sum: '', category: '', description: '', date: '' });
+      setForm({ id: '', sum: '', category: '', currency: '', description: '', date: '' });
     }
-  }, [expenses]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [expenses]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -92,7 +92,7 @@ export default function EditExpenseForm() {
     alert('Expense updated successfully!');
     const updated = await db.getCostsByMonthYear(selectedYear, selectedMonth);
     setExpenses(updated);
-    setForm({ id: '', sum: '', category: '', description: '', date: '' });
+    setForm({ id: '', sum: '', category: '', currency: '', description: '', date: '' });
   };
 
   const handleExpenseSelect = (e) => {
@@ -103,6 +103,7 @@ export default function EditExpenseForm() {
         id: selectedExpense.id,
         sum: String(selectedExpense.sum ?? ''),
         category: selectedExpense.category || '',
+        currency: selectedExpense.currency || '',
         description: selectedExpense.description || '',
         date: toInputDate(d)
       });
@@ -116,7 +117,7 @@ export default function EditExpenseForm() {
     alert('Expense deleted successfully!');
     const updated = await db.getCostsByMonthYear(selectedYear, selectedMonth);
     setExpenses(updated);
-    setForm({ id: '', sum: '', category: '', description: '', date: '' });
+    setForm({ id: '', sum: '', category: '', currency: '', description: '', date: '' });
   };
 
   return (
@@ -181,6 +182,14 @@ export default function EditExpenseForm() {
                 />
 
                 <TextField
+                  label="Currency" name="currency" value={form.currency} onChange={handleChange} select
+                  fullWidth margin="normal" variant="outlined"
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' }, mb: 2 }}
+                >
+                  {['USD','ILS','GBP','EURO'].map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                </TextField>
+
+                <TextField
                   label="Category" name="category" value={form.category} onChange={handleChange} select
                   fullWidth margin="normal" variant="outlined"
                   InputProps={{ startAdornment: (<InputAdornment position="start"><CategoryIcon sx={{ color: '#6b7280' }} /></InputAdornment>) }}
@@ -207,7 +216,7 @@ export default function EditExpenseForm() {
                   <Button variant="contained" size="large" onClick={handleEdit} startIcon={<EditIcon />} sx={{ borderRadius: '12px', px: 4 }}>
                     Save Changes
                   </Button>
-                  <Button variant="contained" size="large" onClick={() => setOpenDeleteDialog(true)} startIcon={<DeleteIcon />} sx={{ borderRadius: '12px', px: 4 }}>
+                  <Button variant="contained" color="error" size="large" onClick={() => setOpenDeleteDialog(true)} startIcon={<DeleteIcon />} sx={{ borderRadius: '12px', px: 4 }}>
                     Delete Expense
                   </Button>
                 </Box>
@@ -222,7 +231,7 @@ export default function EditExpenseForm() {
         <DialogContent><DialogContentText>This action cannot be undone.</DialogContentText></DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
-          <Button onClick={handleDelete} variant="contained" autoFocus>Delete</Button>
+          <Button onClick={handleDelete} variant="contained" color="error" autoFocus>Delete</Button>
         </DialogActions>
       </Dialog>
     </Box>
