@@ -24,17 +24,26 @@ The app fetches **exchange rates** from a configurable URL in **Settings**.
 
 ## 🖼 Screenshots
 
-Screenshots are available under the [`/Screenshots`](./Screenshots) folder.
+Screenshots are available under the <code>/Screenshots</code> folder.
 
-| Add Cost | Category Chart | Monthly Report |
-|----------|----------------|----------------|
-| ![Add Cost](Screenshots/add%20cost.png) | ![Category Chart](Screenshots/pie.png) | ![Monthly Report](Screenshots/monthly%20report.png) |
+<h3>Add Cost</h3>
+<img src="Screenshots/add%20cost.png" width="600"/>
 
-| Edit Expense | Yearly Chart | Settings |
-|--------------|--------------|----------|
-| ![Edit Expense](Screenshots/edit%20cost.png) | ![Yearly Chart](Screenshots/bar%20chart.png) | ![Settings](Screenshots/setting.png) |
+<h3>Category Chart</h3>
+<img src="Screenshots/pie.png" width="600"/>
 
----
+<h3>Monthly Report</h3>
+<img src="Screenshots/monthly%20report.png" width="600"/>
+
+<h3>Edit Expense</h3>
+<img src="Screenshots/edit%20cost.png" width="600"/>
+
+<h3>Yearly Chart</h3>
+<img src="Screenshots/bar%20chart.png" width="600"/>
+
+<h3>Settings</h3>
+<img src="Screenshots/setting.png" width="600"/>
+
 
 ## 🏗 Tech Stack
 
