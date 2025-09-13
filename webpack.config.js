@@ -7,52 +7,47 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
-    clean: true, // clean dist on rebuild
+    clean: true,
   },
   module: {
     rules: [
       {
-        test: /\.jsx?$/,
+        test: /\.[jt]sx?$/,          // JS & JSX
         exclude: /node_modules/,
-        use: { loader: 'babel-loader' },
+        use: {
+          loader: 'babel-loader',
+          options: {
+            // Force presets here so JSX is always transformed
+            presets: [
+              ['@babel/preset-env', { targets: { browsers: 'defaults' } }],
+              ['@babel/preset-react', { runtime: 'automatic' }],
+            ],
+          },
+        },
       },
       {
-        test: /\.css$/,
+        test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
+      { test: /\.(png|jpe?g|gif|svg)$/i, type: 'asset/resource' },
     ],
   },
   resolve: {
-    extensions: ['.js', '.jsx'],
+    extensions: ['.js', '.jsx', '.json'],
   },
-
-  // Serve both /public and /dist in dev, so /rates.json is available at /
   devServer: {
     static: [
-      {
-        directory: path.join(__dirname, 'public'),
-        publicPath: '/', // expose public/ at root
-        watch: true,
-      },
-      {
-        directory: path.join(__dirname, 'dist'),
-        publicPath: '/', // keep bundle served as well
-        watch: true,
-      },
+      { directory: path.join(__dirname, 'public'), publicPath: '/', watch: true },
+      { directory: path.join(__dirname, 'dist'),   publicPath: '/', watch: true },
     ],
     compress: true,
     port: 3000,
     allowedHosts: 'all',
-    historyApiFallback: true, // SPA routing
+    historyApiFallback: true,
     open: false,
   },
-
   plugins: [
-    // Copy public/* into dist on build so /rates.json exists in production
-    new CopyWebpackPlugin({
-      patterns: [{ from: 'public', to: '.' }],
-    }),
+    new CopyWebpackPlugin({ patterns: [{ from: 'public', to: '.' }] }),
   ],
-
   mode: 'development',
 };

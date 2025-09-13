@@ -1,26 +1,17 @@
 // src/components/YearlyBarChart.jsx
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Box, Card, CardContent, Typography, FormControl, InputLabel,
-  Select, MenuItem, Stack, Alert, LinearProgress, Button
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Box, Card, CardContent, Typography, FormControl, InputLabel, Select, MenuItem, Stack, Alert, LinearProgress } from '@mui/material';
 import IDBWrapper from '../idb';
-import { fetchExchangeRates, convert } from '../services/currencyService';
 
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const db = new IDBWrapper('CostManagerDB', 2);
 
 export default function YearlyBarChart() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [currency, setCurrency] = useState('USD');
   const [monthlyTotals, setMonthlyTotals] = useState(Array(12).fill(0));
   const [loading, setLoading] = useState(false);
-  const [ratesError, setRatesError] = useState('');
-  const [dataError, setDataError] = useState('');
-  const navigate = useNavigate();
-  const symbolMap = { USD: '$', GBP: '£', EURO: '€', ILS: '₪' };
-  const symbol = symbolMap[currency] || '';
-  const fmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+  const [err, setErr] = useState('');
 
   const years = useMemo(() => {
     const y = new Date().getFullYear();
@@ -29,67 +20,40 @@ export default function YearlyBarChart() {
   const currencies = ['USD', 'GBP', 'EURO', 'ILS'];
 
   useEffect(() => {
-    loadData(year, currency);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    (async () => {
+      setLoading(true); setErr('');
+      try {
+        const reports = await Promise.all(
+          Array.from({ length: 12 }, (_, i) => db.getReport(year, i + 1, currency))
+        );
+        setMonthlyTotals(reports.map(r => r.total.total || 0));
+      } catch (e) {
+        setErr(e?.message || 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [year, currency]);
 
-  async function loadData(selectedYear, targetCurrency) {
-    setLoading(true);
-    setRatesError('');
-    setDataError('');
+  const hasAny = monthlyTotals.some(v => v > 0);
+  const fmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 
-    try {
-      const rates = await fetchExchangeRates();
-
-      const db = new IDBWrapper('CostManagerDB', 1);
-      const lists = await Promise.all(
-        Array.from({ length: 12 }, (_, i) => db.getCostsByMonthYear(selectedYear, i + 1))
-      );
-
-      const totals = lists.map(list =>
-        list.reduce((sum, item) => {
-          const amount = Number(item.sum) || 0;
-          const src = String(item.currency || 'USD').toUpperCase();
-          try {
-            return sum + convert(amount, src, targetCurrency, rates);
-          } catch {
-            return sum;
-          }
-        }, 0)
-      );
-
-      setMonthlyTotals(totals);
-    } catch (err) {
-      const msg = err?.message || 'Unexpected error';
-      if (/configured|rates|fetch/i.test(msg)) setRatesError(msg);
-      else setDataError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const maxValue = useMemo(
-    () => Math.max(1, ...monthlyTotals) * 1.12,
-    [monthlyTotals]
-  );
-
-  // SVG sizes
-  const chartWidth = 900;
-  const chartHeight = 320;
+  const chartWidth = 900, chartHeight = 320;
   const padding = { top: 36, right: 20, bottom: 40, left: 40 };
   const innerW = chartWidth - padding.left - padding.right;
   const innerH = chartHeight - padding.top - padding.bottom;
   const gap = 12;
   const barWidth = (innerW - gap * (12 - 1)) / 12;
+  const maxValue = Math.max(1, ...monthlyTotals) * 1.12;
 
   return (
     <Box sx={{ p: 4 }}>
       <Typography variant="h4" align="center" sx={{ color: '#2c3e50', fontWeight: 700, mb: 3 }}>
         Totals by Month — {year} ({currency})
-        </Typography>
+      </Typography>
       <Typography color="text.secondary" sx={{ mb: 2 }}>
-         Total expenses per month in the selected year, shown in the selected currency.
-         </Typography>
+        Total expenses per month in the selected year, shown in the selected currency.
+      </Typography>
 
       <Card elevation={0} sx={{ p: 3, borderRadius: '16px', bgcolor: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
         <CardContent>
@@ -109,73 +73,44 @@ export default function YearlyBarChart() {
             </FormControl>
           </Stack>
 
-          {ratesError && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              {ratesError}
-              {/configured/i.test(ratesError) && (
-                <Button size="small" variant="outlined" sx={{ ml: 1 }} onClick={() => navigate('/settings')}>
-                  Go to Settings
-                </Button>
-              )}
-            </Alert>
-          )}
-          {dataError && <Alert severity="error" sx={{ mb: 2 }}>{dataError}</Alert>}
+          {err && <Alert severity="error" sx={{ mb: 2 }}>{err}</Alert>}
           {loading && <LinearProgress sx={{ mb: 2 }} />}
 
-          {/* SVG vertical bars */}
-          <Box sx={{ overflowX: 'auto' }}>
-            <svg width={chartWidth} height={chartHeight} role="img" aria-label="Yearly totals bar chart">
-              {/* X axis labels */}
-              {MONTH_LABELS.map((label, i) => {
-                const x = padding.left + i * (barWidth + gap) + barWidth / 2;
-                const y = chartHeight - padding.bottom + 18;
-                return (
-                  <text key={label} x={x} y={y} textAnchor="middle" fontSize="14" fill="#555">
-                    {label}
-                  </text>
-                );
-              })}
+          {!loading && !err && !hasAny && (
+            <Typography align="center" color="text.secondary" sx={{ my: 4 }}>
+              No expenses found for the selected year.
+            </Typography>
+          )}
 
-              {/* Y axis line */}
-              <line
-                x1={padding.left}
-                y1={padding.top}
-                x2={padding.left}
-                y2={chartHeight - padding.bottom}
-                stroke="#ccc"
-              />
+          {!loading && !err && hasAny && (
+            <Box sx={{ overflowX: 'auto' }}>
+              <svg width={chartWidth} height={chartHeight} role="img" aria-label="Yearly totals bar chart">
+                {MONTH_LABELS.map((label, i) => {
+                  const x = padding.left + i * (barWidth + gap) + barWidth / 2;
+                  const y = chartHeight - padding.bottom + 18;
+                  return <text key={label} x={x} y={y} textAnchor="middle" fontSize="14" fill="#555">{label}</text>;
+                })}
 
-              {/* Bars */}
-              {monthlyTotals.map((val, i) => {
-                const h = (val / maxValue) * innerH;
-                const x = padding.left + i * (barWidth + gap);
-                const y = chartHeight - padding.bottom - h;
-                return (
-                  <g key={i}>
-                    <rect
-                      x={x}
-                      y={y}
-                      width={barWidth}
-                      height={h}
-                      rx="6"
-                      fill="#4caf50"
-                    >
-                      <title>{`${MONTH_LABELS[i]}: ${val.toFixed(2)} ${currency}`}</title>
-                    </rect>
-                    <text
-                      x={x + barWidth / 2}
-                      y={y - 6}
-                      textAnchor="middle"
-                      fontSize="14"
-                      fill="#333"
-                    >
-                      {fmt.format(Math.round(val))}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </Box>
+                <line x1={padding.left} y1={padding.top} x2={padding.left} y2={chartHeight - padding.bottom} stroke="#ccc" />
+
+                {monthlyTotals.map((val, i) => {
+                  const h = (val / maxValue) * innerH;
+                  const x = padding.left + i * (barWidth + gap);
+                  const y = chartHeight - padding.bottom - h;
+                  return (
+                    <g key={i}>
+                      <rect x={x} y={y} width={barWidth} height={h} rx="6" fill="#4caf50">
+                        <title>{`${MONTH_LABELS[i]}: ${val.toFixed(2)} ${currency}`}</title>
+                      </rect>
+                      <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fontSize="14" fill="#333">
+                        {fmt.format(Math.round(val))}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </Box>
+          )}
         </CardContent>
       </Card>
     </Box>
