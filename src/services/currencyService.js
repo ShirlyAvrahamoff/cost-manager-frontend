@@ -10,18 +10,18 @@ const EXTERNAL_RATES_URL =
 /**
  * Fetch exchange rates JSON from the configured URL.
  * Expected shape: { USD: 1, GBP: 1.8, EURO: 0.7, ILS: 3.4 }
- * The values are “units per 1 USD”.
- * Falls back to /rates.json, then to the external gist, ואז לערכי ברירת מחדל.
+ * The values represent "units per 1 USD".
+ * Fallback order: settings URL -> /rates.json -> external gist -> hard-coded defaults.
  */
 export async function fetchExchangeRates() {
   let url = getExchangeRatesUrl();
-  // נקה מרכאות שנשמרו בטעות
+  // Normalize accidentally saved quotes around the URL, if any
   if (typeof url === 'string') {
     url = url.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1').trim();
   }
   if (!url) url = DEFAULT_RATES_URL;
 
-  // Helper קטן
+  // Small helper: fetch, validate shape, and return parsed JSON
   const tryFetch = async (u) => {
     const res = await fetch(u, { method: 'GET', cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -30,30 +30,30 @@ export async function fetchExchangeRates() {
     return data;
   };
 
-  // נסה: URL נוכחי → לוקאלי → gist → דיפולט קשיח
+  // Try: current URL -> local -> external gist -> hard-coded defaults
   try {
     return await tryFetch(url);
   } catch (e1) {
-    // לוקאלי
+    // Local fallback
     if (url !== DEFAULT_RATES_URL) {
       try {
         return await tryFetch(DEFAULT_RATES_URL);
-      } catch {}
+      } catch { }
     }
-    // gist חיצוני
+    // External gist fallback
     try {
       return await tryFetch(EXTERNAL_RATES_URL);
-    } catch {}
-    // דיפולט קשיח
+    } catch { }
+    // Final fallback: hard-coded defaults
     return { USD: 1, GBP: 1.8, EURO: 0.7, ILS: 3.4 };
   }
 }
 
 /**
  * Convert amount between currencies using the given rates.
- * Rates are “units per 1 USD”, so:
- *   amount_in_usd = amount / rates[from]
- *   amount_in_to  = amount_in_usd * rates[to]
+ * Rates are "units per 1 USD", so:
+ *   amountInUSD = amount / rates[from]
+ *   amountInTo  = amountInUSD * rates[to]
  */
 export function convert(amount, from, to, rates) {
   const a = Number(amount) || 0;

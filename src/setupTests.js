@@ -1,19 +1,19 @@
-// 1) RTL matchers
+// 1) Extend Jest with DOM matchers (RTL)
 import '@testing-library/jest-dom';
 
-// 2) fetch ל־jsdom
+// 2) Fetch polyfill for JSDOM
 import 'whatwg-fetch';
 
-// 3) polyfill ל-structuredClone (נדרש ע"י fake-indexeddb)
+// 3) Polyfill for structuredClone (required by fake-indexeddb)
 if (typeof global.structuredClone !== 'function') {
   global.structuredClone = (val) =>
     val === undefined ? val : JSON.parse(JSON.stringify(val));
 }
 
-// 4) Fake IndexedDB — הגדרה אוטומטית של indexedDB על globalThis
+// 4) Fake IndexedDB — automatically defines indexedDB on globalThis
 import 'fake-indexeddb/auto';
 
-// 5) localStorage מינימלי (למקרה שחסר)
+// 5) Minimal localStorage mock (if missing)
 if (typeof global.localStorage === 'undefined') {
   class LocalStorageMock {
     constructor() { this.store = {}; }
@@ -25,14 +25,14 @@ if (typeof global.localStorage === 'undefined') {
   global.localStorage = new LocalStorageMock();
 }
 
-// 6) URL דמה לשערי מט"ח (הטסטים עדיין יכולים למקם mock ל-fetch)
+// 6) Default URL for exchange rates (tests can still mock fetch as needed)
 localStorage.setItem('exchangeRatesUrl', 'https://example.com/rates.json');
 
-// 7) השתקת window.alert ב־jsdom
+// 7) Silence window.alert in JSDOM
 if (typeof window !== 'undefined') {
   if (typeof window.alert !== 'function') {
-    window.alert = () => {};
+    window.alert = () => { };
   } else {
-    jest.spyOn(window, 'alert').mockImplementation(() => {});
+    jest.spyOn(window, 'alert').mockImplementation(() => { });
   }
 }

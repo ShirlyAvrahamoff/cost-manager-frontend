@@ -1,10 +1,11 @@
 // UI test for the "Add Expense" form.
 // We mock IDBWrapper so no real IndexedDB writes happen.
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// מגדירים את המוק בתוך המפעל, וגם מייצאים אותו החוצה לשימוש בטסט
+// Provide a factory mock for IDBWrapper and export the mock function for assertions.
 jest.mock('../idb', () => {
   const mockAddCost = jest.fn().mockResolvedValue({});
   return {
@@ -16,13 +17,13 @@ jest.mock('../idb', () => {
   };
 });
 
-// חשוב: הייבוא אחרי jest.mock — כך נקבל את ה־named export
+// Important: import after jest.mock so the test receives the mocked exports.
 import AddCostForm from '../components/AddCostForm';
 import { mockAddCost } from '../idb';
 
 beforeEach(() => {
   mockAddCost.mockClear();
-  // למנוע שגיאת "Not implemented: window.alert" ב־JSDOM
+  // Silence "Not implemented: window.alert" errors in JSDOM.
   window.alert = jest.fn();
 });
 
