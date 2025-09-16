@@ -1,4 +1,15 @@
 // src/components/Settings.jsx
+// -----------------------------------------------------------------------------
+// Settings — Configure the exchange-rates source URL used by the app.
+// Responsibilities:
+//   • Load/save the URL via services/settings (localStorage-based)
+//   • Validate URL syntax (http/https) before saving
+//   • Guide the user on the exact JSON format required by the spec
+// Notes:
+//   • For simplest setup, pointing to /rates.json on the same origin avoids CORS.
+//   • Comments only. No code changes.
+// -----------------------------------------------------------------------------
+
 import React, { useEffect, useState } from 'react';
 import { Box, Card, CardContent, TextField, Button, Typography, Stack, Alert } from '@mui/material';
 import { getExchangeRatesUrl, setExchangeRatesUrl } from '../services/settings';

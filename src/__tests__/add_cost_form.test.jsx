@@ -18,7 +18,7 @@ jest.mock('../idb', () => {
 });
 
 // Important: import after jest.mock so the test receives the mocked exports.
-import AddCostForm from '../components/AddCostForm';
+import AddCostForm from '../components/add_cost_form';
 import { mockAddCost } from '../idb';
 
 beforeEach(() => {

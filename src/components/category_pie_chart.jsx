@@ -1,4 +1,17 @@
 // src/components/CategoryPieChart.jsx
+// -----------------------------------------------------------------------------
+// CategoryPieChart — Pie chart of monthly totals by category.
+// Responsibilities:
+//   • Fetch month/year costs from IndexedDB (DB: 'costsdb', v1) via IDBWrapper
+//   • Convert all amounts to the selected currency using fetchExchangeRates()
+//   • Aggregate totals per category and render a Pie (Chart.js)
+// Notes:
+//   • The DB stores the insertion date; reporting is by (year, month).
+//   • getCostsByMonthYear in our wrapper tolerates (month, year) or (year, month)
+//     thanks to an internal swap guard. Here we pass (selectedMonth, selectedYear).
+//   • Comments only. No code changes.
+// -----------------------------------------------------------------------------
+
 /**
  * Component for displaying a pie chart of costs by category.
  * Fetches data from IndexedDB and visualizes it using Chart.js.
@@ -49,6 +62,7 @@ function CategoryPieChart() {
     labels: [],
     datasets: [{
       data: [],
+      // Visual palette: consistent per category; purely presentational.
       backgroundColor: [
         '#4CAF50',  // Food
         '#2196F3',  // Transportation
@@ -81,10 +95,13 @@ function CategoryPieChart() {
     const fetchData = async () => {
       const idb = new IDBWrapper('costsdb', 1);
 
-      // NOTE: if your wrapper expects (year, month), swap the params here.
+      // Wrapper tolerates parameter order. Here we pass (month, year).
       const costs = await idb.getCostsByMonthYear(selectedMonth, selectedYear);
+
+      // External rates JSON (units-per-USD) with default fallback handled in service.
       const rates = await fetchExchangeRates();
 
+      // Empty month: render an empty chart state gracefully.
       if (costs.length === 0) {
         setChartData({
           labels: [],
@@ -128,9 +145,8 @@ function CategoryPieChart() {
     fetchData();
   }, [selectedMonth, selectedYear, currency]);
 
-  // Layout for selecting month/year/currency and displaying the pie chart.
-  // Includes Material-UI components and the Chart.js Pie chart.
-
+  // Layout: month/year/currency controls + pie chart.
+  // Accessibility: textual empty-state when no data.
   return (
     <Box sx={{ p: 4 }}>
       <Typography
@@ -191,7 +207,7 @@ function CategoryPieChart() {
           </Select>
         </FormControl>
 
-        {/* Currency selector */}
+        {/* Currency selector — affects conversion and tooltips */}
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Currency</InputLabel>
           <Select

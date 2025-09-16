@@ -1,4 +1,15 @@
 // src/components/EditExpenseForm.jsx
+// -----------------------------------------------------------------------------
+// EditExpenseForm — Management UI for updating or deleting an expense.
+// Responsibilities:
+//   • Load monthly expenses (DB: 'costsdb', v1) via IDBWrapper
+//   • Allow selecting an expense, editing fields, and saving via updateCost()
+//   • Allow deleting an expense via deleteCost()
+//   • Date editing: writes back _ts/year/month/day and Date.day consistently
+// Notes:
+//   • This file adds comments only. No code changes.
+// -----------------------------------------------------------------------------
+
 import React, { useState, useEffect } from 'react';
 import {
   Button, TextField, MenuItem, Container, Paper, Typography, Box, Select,
@@ -13,15 +24,20 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import IDBWrapper from '../idb';
 
+// DB wrapper instance for this view (costsdb, v1).
 const db = new IDBWrapper('costsdb', 1);
 
+// Accent colors per category (purely visual)
 const categoryColors = {
   Food: '#4CAF50', Transportation: '#2196F3', Entertainment: '#FF9800',
   Health: '#E91E63', Education: '#9C27B0', Utilities: '#00BCD4'
 };
 
+// Currency symbol helper (display only)
 const getSymbol = (c) => ({ USD: '$', GBP: '£', EURO: '€', ILS: '₪' }[String(c || 'USD').toUpperCase()] || '');
 
+// Normalize an expense into a Date object using various fallbacks.
+// Priority: _ts (ISO) → explicit .date → Date.day combined with selected year/month.
 const parseExpenseDate = (exp, year, month) => {
   if (exp?._ts) {
     const d = new Date(exp._ts);
@@ -39,6 +55,7 @@ const parseExpenseDate = (exp, year, month) => {
   return null;
 };
 
+// Convert Date → YYYY-MM-DD (for <input type="date">)
 const toInputDate = (d) => {
   if (!d || Number.isNaN(d.getTime())) return '';
   const yyyy = d.getFullYear();
@@ -48,17 +65,23 @@ const toInputDate = (d) => {
 };
 
 export default function EditExpenseForm() {
+  // Form state for the editable expense (id is required to enable edit/delete)
   const [form, setForm] = useState({ id: '', sum: '', category: '', currency: '', description: '', date: '' });
+  // Currently loaded expenses (filtered by month/year)
   const [expenses, setExpenses] = useState([]);
+  // Month/year filters
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  // Delete confirmation dialog
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   const noData = expenses.length === 0;
 
+  // Load expenses whenever month/year changes; reset form and dialog state
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Wrapper tolerates (month, year) or (year, month).
       const allExpenses = await db.getCostsByMonthYear(selectedYear, selectedMonth);
       if (cancelled) return;
       setExpenses(allExpenses);
@@ -68,14 +91,17 @@ export default function EditExpenseForm() {
     return () => { cancelled = true; };
   }, [selectedMonth, selectedYear]);
 
+  // If the current selection disappears due to month/year change, clear the form
   useEffect(() => {
     if (form.id && !expenses.some(e => e.id === form.id)) {
       setForm({ id: '', sum: '', category: '', currency: '', description: '', date: '' });
     }
   }, [expenses]);
 
+  // Generic change handler
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  // Persist edits using updateCost(); validates inputs at UI level.
   const handleEdit = async () => {
     if (!form.id || !form.sum) return alert('Please select an expense and fill the amount.');
     const numericSum = parseFloat(form.sum);
@@ -90,11 +116,13 @@ export default function EditExpenseForm() {
     });
 
     alert('Expense updated successfully!');
+    // Reload the list after update to reflect changes.
     const updated = await db.getCostsByMonthYear(selectedYear, selectedMonth);
     setExpenses(updated);
     setForm({ id: '', sum: '', category: '', currency: '', description: '', date: '' });
   };
 
+  // When selecting an expense from the dropdown, prefill fields.
   const handleExpenseSelect = (e) => {
     const selectedExpense = expenses.find(x => x.id === e.target.value);
     if (selectedExpense) {
@@ -110,6 +138,7 @@ export default function EditExpenseForm() {
     }
   };
 
+  // Delete the selected expense (with confirmation dialog)
   const handleDelete = async () => {
     if (!form.id) return;
     await db.deleteCost(form.id);
@@ -126,6 +155,7 @@ export default function EditExpenseForm() {
         Edit Expense
       </Typography>
 
+      {/* Month/Year selectors (filtering the loaded expenses) */}
       <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Month</InputLabel>
@@ -146,6 +176,7 @@ export default function EditExpenseForm() {
       <Container maxWidth="sm">
         <Paper elevation={0} sx={{ p: 4, borderRadius: '16px', bgcolor: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
           <form>
+            {/* Expense selector — lists current month/year expenses */}
             <FormControl fullWidth sx={{ mb: 1.5 }}>
               <InputLabel>Select Expense</InputLabel>
               <Select name="id" value={form.id} onChange={handleExpenseSelect} label="Select Expense" disabled={noData}>
@@ -172,6 +203,7 @@ export default function EditExpenseForm() {
               </Typography>
             )}
 
+            {/* Edit form shows only when an expense is selected */}
             {form.id && (
               <>
                 <TextField
@@ -205,6 +237,7 @@ export default function EditExpenseForm() {
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' }, mb: 2 }}
                 />
 
+                {/* Date uses ISO input; updateCost() coerces and stores date fields coherently */}
                 <TextField
                   label="Date" name="date" type="date" value={form.date} onChange={handleChange}
                   fullWidth margin="normal" variant="outlined"
@@ -226,6 +259,7 @@ export default function EditExpenseForm() {
         </Paper>
       </Container>
 
+      {/* Confirmation dialog for deletion */}
       <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
         <DialogTitle>Confirm Expense Deletion</DialogTitle>
         <DialogContent><DialogContentText>This action cannot be undone.</DialogContentText></DialogContent>

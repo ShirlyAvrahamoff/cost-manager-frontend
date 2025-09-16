@@ -1,4 +1,15 @@
 // src/components/Sidebar.jsx
+// -----------------------------------------------------------------------------
+// Sidebar — Navigation panel linking to the app's primary views.
+// Responsibilities:
+//   • Provide quick navigation via react-router-dom links
+//   • Optionally notify parent (onSelectComponent) for compatibility with
+//     components that track selection outside the router.
+// Notes:
+//   • Styling: MUI <Button>s with icons and subtle hover effects.
+//   • Comments only. No code changes.
+// -----------------------------------------------------------------------------
+
 /**
  * Sidebar navigation for primary app views.
  */
@@ -28,6 +39,7 @@ const itemSx = {
 };
 
 const Sidebar = ({ onSelectComponent }) => {
+    // Optional compatibility hook for parent stateful selection
     const handleCompat = (name) => {
         if (typeof onSelectComponent === 'function') {
             onSelectComponent(name);

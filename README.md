@@ -36,8 +36,6 @@ The app fetches **exchange rates** from a configurable URL in **Settings**.
   - `Date:{ day:number }` *(for the vanilla spec)*  
   - plus internal fields used for reporting (`year`, `month`, `day`, timestamp)
 
-> If you previously opened a higher DB version locally, delete the old DB in Chrome DevTools → **Application** → **IndexedDB** → **costsdb** → *Delete database*, then hard-reload.
-
 ---
 
 ## 💱 Exchange Rates
@@ -56,7 +54,7 @@ The app fetches a JSON of the form:
 
 ## 🖼 Screenshots
 
-Screenshots live under `/Screenshots`.
+Screenshots live under `/screenshots`.
 
 ### Add Cost
 <img src="screenshots\add_cost.png" width="600"/>

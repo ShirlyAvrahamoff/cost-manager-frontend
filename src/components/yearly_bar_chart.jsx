@@ -1,4 +1,16 @@
 // src/components/YearlyBarChart.jsx
+// -----------------------------------------------------------------------------
+// YearlyBarChart — SVG bar chart of totals per month in a selected year.
+// Responsibilities:
+//   • For a chosen (year, currency), call db.getReport(year, month, currency) 12x
+//   • Collect monthly totals and render an accessible SVG bar chart
+//   • Provide selectors for year and currency; handle loading/errors
+// Notes:
+//   • db.getReport returns total in the requested currency (units-per-USD model).
+//   • The SVG includes axis labels and <title> for basic a11y.
+//   • Comments only. No code changes.
+// -----------------------------------------------------------------------------
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Card, CardContent, Typography, FormControl, InputLabel, Select, MenuItem, Stack, Alert, LinearProgress } from '@mui/material';
 import IDBWrapper from '../idb';
@@ -13,12 +25,14 @@ export default function YearlyBarChart() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
 
+  // Reasonable year range for selection (±2 years around current)
   const years = useMemo(() => {
     const y = new Date().getFullYear();
     return [y - 2, y - 1, y, y + 1];
   }, []);
   const currencies = ['USD', 'GBP', 'EURO', 'ILS'];
 
+  // Load 12 monthly reports whenever (year, currency) changes.
   useEffect(() => {
     (async () => {
       setLoading(true); setErr('');
@@ -38,6 +52,7 @@ export default function YearlyBarChart() {
   const hasAny = monthlyTotals.some(v => v > 0);
   const fmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 
+  // Basic SVG layout constants (padding, bar size, scale)
   const chartWidth = 900, chartHeight = 320;
   const padding = { top: 36, right: 20, bottom: 40, left: 40 };
   const innerW = chartWidth - padding.left - padding.right;
@@ -84,15 +99,19 @@ export default function YearlyBarChart() {
 
           {!loading && !err && hasAny && (
             <Box sx={{ overflowX: 'auto' }}>
+              {/* Accessible SVG bar chart with month labels and values */}
               <svg width={chartWidth} height={chartHeight} role="img" aria-label="Yearly totals bar chart">
+                {/* X-axis month labels */}
                 {MONTH_LABELS.map((label, i) => {
                   const x = padding.left + i * (barWidth + gap) + barWidth / 2;
                   const y = chartHeight - padding.bottom + 18;
                   return <text key={label} x={x} y={y} textAnchor="middle" fontSize="14" fill="#555">{label}</text>;
                 })}
 
+                {/* Y-axis baseline */}
                 <line x1={padding.left} y1={padding.top} x2={padding.left} y2={chartHeight - padding.bottom} stroke="#ccc" />
 
+                {/* Bars and value labels */}
                 {monthlyTotals.map((val, i) => {
                   const h = (val / maxValue) * innerH;
                   const x = padding.left + i * (barWidth + gap);

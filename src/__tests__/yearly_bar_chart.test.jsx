@@ -23,7 +23,7 @@ jest.mock('../idb', () => {
 });
 
 // Mock currency service: identity conversion.
-jest.mock('../services/currencyService', () => ({
+jest.mock('../services/currency_service', () => ({
   __esModule: true,
   fetchExchangeRates: jest.fn().mockResolvedValue({
     USD: 1,
@@ -34,7 +34,7 @@ jest.mock('../services/currencyService', () => ({
   convert: (amount) => amount,
 }));
 
-import YearlyBarChart from '../components/YearlyBarChart';
+import YearlyBarChart from '../components/yearly_bar_chart';
 import { mockGetReport } from '../idb';
 
 beforeEach(() => {

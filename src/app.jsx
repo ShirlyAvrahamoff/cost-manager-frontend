@@ -1,3 +1,15 @@
+// src/app.jsx
+// -----------------------------------------------------------------------------
+// App shell + routing
+// Responsibilities:
+//   • Provide the main layout (sidebar + content area)
+//   • Define client-side routes for the app sections
+//   • Keep a lightweight "selectedComponent" for compatibility with Sidebar
+// Notes:
+//   • Uses react-router-dom (BrowserRouter) and MUI layout primitives.
+//   • Comments only; no changes to logic or component names.
+// -----------------------------------------------------------------------------
+
 import React, { useState, useMemo } from 'react';
 import { IconButton, Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -11,15 +23,18 @@ import EditExpenseForm from './components/edit_expense_form';
 import Settings from './components/settings';
 import YearlyBarChart from './components/yearly_bar_chart';
 
-
 /**
  * Application shell with sidebar and routing.
+ * State:
+ *  - selectedComponent: compatibility with sidebar callbacks
+ *  - isSidebarOpen: responsive toggle for the navigation panel
  */
 function AppShell() {
     const [selectedComponent, setSelectedComponent] = useState('AddCostForm');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const navigate = useNavigate();
 
+    // Route aliases used by Sidebar's onSelectComponent (no hard-coded paths there)
     const routeMap = useMemo(() => ({
         AddCostForm: '/add',
         MonthlyReport: '/report',
@@ -29,6 +44,7 @@ function AppShell() {
         YearlyBarChart: '/yearly',
     }), []);
 
+    // Small, side-effect-free toggles/handlers
     const toggleSidebar = () => setIsSidebarOpen((v) => !v);
 
     const handleSelectComponent = (name) => {
@@ -37,6 +53,9 @@ function AppShell() {
         navigate(path);
     };
 
+    // Layout:
+    //  - Left: optional Sidebar
+    //  - Right: routed content area with glassy background
     return (
         <Box
             sx={{
@@ -104,6 +123,7 @@ function AppShell() {
                         overflow: 'hidden',
                     }}
                 >
+                    {/* Route table — keep paths stable and aligned with Sidebar buttons */}
                     <Routes>
                         <Route path="/" element={<Navigate to="/add" replace />} />
                         <Route path="/add" element={<AddCostForm />} />
@@ -122,6 +142,7 @@ function AppShell() {
 
 /**
  * Main application component wrapped with Router.
+ * Keeps routing isolated from render tree consumers.
  */
 export default function App() {
     return (

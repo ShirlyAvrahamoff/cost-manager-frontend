@@ -1,4 +1,17 @@
 // src/components/MonthlyReport.jsx
+// -----------------------------------------------------------------------------
+// MonthlyReport — Detailed list view for a given month/year.
+// Responsibilities:
+//   • Load costs for (month, year) from IndexedDB (DB: 'costsdb', v1)
+//   • Convert values into a selected currency (USD/ILS/GBP/EURO)
+//   • Provide fuzzy search, per-category counts/totals, and CSV export
+// Spec alignment:
+//   • Totals computed in the selected currency (courses spec #2/#5)
+//   • Dates derived from _ts or Date.day (insertion date semantics)
+// Notes:
+//   • Comments only. No code changes.
+// -----------------------------------------------------------------------------
+
 /**
  * Component for generating and displaying monthly expense reports.
  * Provides filters (month/year/currency), search, summary, and CSV export.
@@ -26,17 +39,18 @@ const categoryColors = {
   Utilities: '#00BCD4'
 };
 
+// Allowed display currencies (tokens per spec)
 const currencies = ['USD', 'GBP', 'EURO', 'ILS'];
 const currencySymbol = (c) =>
   ({ USD: '$', GBP: '£', EURO: '€', ILS: '₪' }[String(c).toUpperCase()] || '');
 
 const MonthlyReport = () => {
-  // Filters
+  // Filters (month/year/currency)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [currency, setCurrency] = useState('USD');
 
-  // Show original amounts toggle
+  // Toggle to show original amounts/currency per row (in addition to converted)
   const [showOriginal, setShowOriginal] = useState(false);
 
   // Data
@@ -48,7 +62,7 @@ const MonthlyReport = () => {
   const [totalConverted, setTotalConverted] = useState(0);
   const [totalsByCategoryConverted, setTotalsByCategoryConverted] = useState({});
 
-  // Search
+  // Fuzzy search
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredData, setFilteredData] = useState([]);
 
@@ -82,16 +96,18 @@ const MonthlyReport = () => {
     const fetchReportData = async () => {
       const idb = new IDBWrapper('costsdb', 1);
 
-      // wrapper expects (month, year)
+      // Wrapper tolerates parameter order; here we pass (month, year).
       const costs = await idb.getCostsByMonthYear(selectedMonth, selectedYear);
       setReportData(costs);
 
+      // Per-category counts (number of items)
       const counts = costs.reduce((acc, cost) => {
         acc[cost.category] = (acc[cost.category] || 0) + 1;
         return acc;
       }, {});
       setCategoryCounts(counts);
 
+      // Rates for currency conversion (units-per-USD model)
       const r = await fetchExchangeRates();
       setRates(r);
 
@@ -119,6 +135,7 @@ const MonthlyReport = () => {
 
   /**
    * Fuzzy search across category/description/date.
+   * Uses Fuse.js on the loaded month data (client-side only).
    */
   useEffect(() => {
     const fuse = new Fuse(reportData, {
@@ -131,6 +148,7 @@ const MonthlyReport = () => {
 
   const sym = currencySymbol(currency);
 
+  // Convert a single row into selected currency (null until rates loaded)
   const convertedValue = (cost) => {
     if (!rates) return null;
     const from = String(cost.currency || 'USD').toUpperCase();
@@ -140,6 +158,7 @@ const MonthlyReport = () => {
   /**
    * Export current data to CSV (always in selected currency).
    * If "showOriginal" is on, include an extra "Original Amount" column.
+   * This is a client-only export using Blob and a temporary <a> element.
    */
   const exportToCSV = () => {
     const rows = [
@@ -192,7 +211,7 @@ const MonthlyReport = () => {
         Monthly Report
       </Typography>
 
-      {/* Filters */}
+      {/* Filters (month/year/currency) and an optional toggle for original amounts */}
       <Box
         sx={{
           display: 'flex',
@@ -263,7 +282,7 @@ const MonthlyReport = () => {
         />
       </Box>
 
-      {/* Search */}
+      {/* Search box (fuzzy on description/category/date) */}
       <TextField
         fullWidth
         variant="outlined"
@@ -288,7 +307,7 @@ const MonthlyReport = () => {
 
       {filteredData.length > 0 ? (
         <Box>
-          {/* Expense cards */}
+          {/* Expense cards list */}
           <Box sx={{ display: 'grid', gap: 2, mb: 4 }}>
             {filteredData.map((cost, idx) => {
               const d = normalizeCostDate(cost);
@@ -335,7 +354,7 @@ const MonthlyReport = () => {
             })}
           </Box>
 
-          {/* Summary */}
+          {/* Summary pane */}
           <Card sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', mb: 4 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>Summary</Typography>
@@ -362,7 +381,7 @@ const MonthlyReport = () => {
             </CardContent>
           </Card>
 
-          {/* Export */}
+          {/* CSV export button */}
           <Box display="flex" justifyContent="center">
             <Button
               variant="contained"
