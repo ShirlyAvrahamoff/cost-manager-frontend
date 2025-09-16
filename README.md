@@ -151,6 +151,6 @@ Includes:
 - **Vanilla library:** exposes global `idb` and returns Promises.
 - **UI:** React + MUI (desktop browsers).
 - **Code style:** follows the provided guide (semicolons, camelCase for functions/vars, PascalCase for classes, no wrapper objects, no named functions inside blocks, etc.).
-- **Categories:** controlled dropdown in UI **including “OTHER”**; library accepts any non-empty string.
+- **Categories:** controlled dropdown in UI; library accepts any non-empty string.
 
 ---
