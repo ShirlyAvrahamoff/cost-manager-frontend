@@ -13,7 +13,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import IDBWrapper from '../idb';
 
-const db = new IDBWrapper('CostManagerDB', 2);
+const db = new IDBWrapper('costsdb', 1);
 
 const categoryColors = {
   Food: '#4CAF50', Transportation: '#2196F3', Entertainment: '#FF9800',

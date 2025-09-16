@@ -14,7 +14,7 @@ import {
 import Fuse from 'fuse.js';
 import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { fetchExchangeRates, convert } from '../services/currencyService';
+import { fetchExchangeRates, convert } from '../services/currency_service';
 
 // Palette for category accents (cards and summary)
 const categoryColors = {
@@ -80,7 +80,7 @@ const MonthlyReport = () => {
    */
   useEffect(() => {
     const fetchReportData = async () => {
-      const idb = new IDBWrapper('CostManagerDB', 1);
+      const idb = new IDBWrapper('costsdb', 1);
 
       // wrapper expects (month, year)
       const costs = await idb.getCostsByMonthYear(selectedMonth, selectedYear);

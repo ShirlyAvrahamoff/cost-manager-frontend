@@ -3,13 +3,14 @@ import { IconButton, Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
-import AddCostForm from './components/AddCostForm';
-import CategoryPieChart from './components/CategoryPieChart';
-import Sidebar from './components/Sidebar';
-import MonthlyReport from './components/MonthlyReport';
-import EditExpenseForm from './components/EditExpenseForm';
-import Settings from './components/Settings';
-import YearlyBarChart from './components/YearlyBarChart';
+import AddCostForm from './components/add_cost_form';
+import CategoryPieChart from './components/category_pie_chart';
+import Sidebar from './components/sidebar';
+import MonthlyReport from './components/monthly_report';
+import EditExpenseForm from './components/edit_expense_form';
+import Settings from './components/settings';
+import YearlyBarChart from './components/yearly_bar_chart';
+
 
 /**
  * Application shell with sidebar and routing.

@@ -4,7 +4,7 @@ import IDBWrapper from '../idb';
 const RATES = { USD: 1, GBP: 1.8, EURO: 0.7, ILS: 3.4 };
 
 // Utility: delete the database before each test to start clean.
-function deleteDB(name = 'CostManagerDB') {
+function deleteDB(name = 'costsdb') {
   return new Promise((resolve) => {
     const req = indexedDB.deleteDatabase(name);
     req.onsuccess = req.onerror = req.onblocked = () => resolve();
@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 test('addCost + getCostsByMonthYear + getReport (USD)', async () => {
-  const db = new IDBWrapper('CostManagerDB', 2);
+  const db = new IDBWrapper('costsdb', 1);
 
   // Insert: 200 USD and 100 GBP.
   await db.addCost({ sum: 200, currency: 'USD', category: 'Food', description: 'pizza' });

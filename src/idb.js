@@ -1,7 +1,7 @@
 // src/idb.js
 // React modules version
 export default class IDBWrapper {
-  constructor(dbName = 'CostManagerDB', version = 2) {
+  constructor(dbName = 'costsdb', version = 1) {
     this.dbName = dbName;
     this.version = version;
     this.storeName = 'costs';

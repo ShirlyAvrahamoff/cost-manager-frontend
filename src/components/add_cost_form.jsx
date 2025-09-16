@@ -8,7 +8,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import DescriptionIcon from '@mui/icons-material/Description';
 import IDBWrapper from '../idb';
 
-const db = new IDBWrapper('CostManagerDB', 2);
+const db = new IDBWrapper('costsdb', 1);
 
 export default function AddCostForm() {
   const [form, setForm] = useState({ sum: '', currency: 'USD', category: '', description: '' });
@@ -79,7 +79,7 @@ export default function AddCostForm() {
               InputProps={{ startAdornment: (<InputAdornment position="start"><CategoryIcon sx={{ color: '#6b7280' }} /></InputAdornment>) }}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' }, mb: 2 }}
             >
-              {['Food','Transportation','Entertainment','Health','Education','Utilities','Car'].map(c => (
+              {['Food','Transportation','Entertainment','Health','Education','Utilities','Car','Other'].map(c => (
                 <MenuItem key={c} value={c}>{c}</MenuItem>
               ))}
             </TextField>

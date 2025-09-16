@@ -4,7 +4,7 @@ import { Box, Card, CardContent, Typography, FormControl, InputLabel, Select, Me
 import IDBWrapper from '../idb';
 
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const db = new IDBWrapper('CostManagerDB', 2);
+const db = new IDBWrapper('costsdb', 1);
 
 export default function YearlyBarChart() {
   const [year, setYear] = useState(new Date().getFullYear());

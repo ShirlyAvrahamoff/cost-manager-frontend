@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import IDBWrapper from '../idb';
-import { fetchExchangeRates, convert } from '../services/currencyService';
+import { fetchExchangeRates, convert } from '../services/currency_service';
 import { Box, Typography, FormControl, Select, MenuItem, InputLabel, Card } from '@mui/material';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -79,7 +79,7 @@ function CategoryPieChart() {
    */
   useEffect(() => {
     const fetchData = async () => {
-      const idb = new IDBWrapper('CostManagerDB', 1);
+      const idb = new IDBWrapper('costsdb', 1);
 
       // NOTE: if your wrapper expects (year, month), swap the params here.
       const costs = await idb.getCostsByMonthYear(selectedMonth, selectedYear);
