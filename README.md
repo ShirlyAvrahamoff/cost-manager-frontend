@@ -59,22 +59,22 @@ The app fetches a JSON of the form:
 Screenshots live under `/Screenshots`.
 
 ### Add Cost
-<img src="screenshots/add_cost.png" width="600"/>
+<img src="screenshots\add_cost.png" width="600"/>
 
 ### Category Chart
-<img src="screenshots/pie.png" width="600"/>
+<img src="screenshots\pie.png" width="600"/>
 
 ### Monthly Report
-<img src="screenshots/monthly_report.png" width="600"/>
+<img src="screenshots\monthly_report.png" width="600"/>
 
 ### Edit Expense
-<img src="screenshots/edit_cost.png" width="600"/>
+<img src="screenshots\edit_cost.png" width="600"/>
 
 ### Yearly Chart
-<img src="screenshots/bar_chart.png" width="600"/>
+<img src="screenshots\bar_chart.png" width="600"/>
 
 ### Settings
-<img src="screenshots/settings.png" width="600"/>
+<img src="screenshots\setting.png" width="600"/>
 
 ---
 
